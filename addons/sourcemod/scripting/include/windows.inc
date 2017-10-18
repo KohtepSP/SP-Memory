@@ -28,6 +28,15 @@
 
 static Pointer g_pPEB;
 
+/* A little more user-friendly analog of GetVersion() */
+stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
+{
+	Pointer pUserSharedData = ptr(KUSER_SHARED_DATA);
+	
+	iMajorVer = Dereference(pUserSharedData, 0x26C);
+	iMinorVer = Dereference(pUserSharedData, 0x270);
+}
+
 /* Calculate virtual size of module, loaded in memory.     
    Returns -1 if calculation failed */
 stock int GetModuleSize(Pointer pAddr)
@@ -49,15 +58,6 @@ stock int GetModuleSize(Pointer pAddr)
 	}
 }
 
-/* A little more user-friendly analog of GetVersion() */
-stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
-{
-	Pointer pUserSharedData = ptr(KUSER_SHARED_DATA);
-	
-	iMajorVer = Dereference(pUserSharedData, 0x26C);
-	iMinorVer = Dereference(pUserSharedData, 0x270);
-}
-
 stock Pointer GetModuleHandle(char[] name)
 {
 	if(GetCurrentPeb() == nullptr)
@@ -71,7 +71,7 @@ stock Pointer GetModuleHandle(char[] name)
 		return ptr(Dereference(g_pPEB, 8)); // g_pPEB->ImageBaseAddress
 	}
 	
-	Pointer pLdrModule = NtCurrentPeb();
+	Pointer pLdrModule = GetCurrentPeb();
 	pLdrModule = ptr(Dereference(pLdrModule, 12)); // *(PEB_LDR_DATA*)g_pPEB->Ldr
 	pLdrModule = ptr(Dereference(pLdrModule, 12)); // (LDR_MODULE*)Ldr->InMemoryOrderModuleList.Flink	
 	
@@ -146,15 +146,15 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 		/* */
 		
 		if(strcmp(strBuf, name, false) == 0)
-		{
-			int iFuncNum = Dereference(pOrdList) * 4;
+		{		
+			int iFuncNum = (Dereference(pOrdList) & 0xFFFF) * 4;
 			Pointer pFuncAddr = ptr(int(pFuncList) + iFuncNum);
 			
 			return Transpose(pModule, Dereference(pFuncAddr));
 		}
 		
 		pNameList = Transpose(pNameList, 4);
-		pOrdList  = Transpose(pOrdList, 4);
+		pOrdList  = Transpose(pOrdList, 2);
 	}
 	
 	return nullptr;
