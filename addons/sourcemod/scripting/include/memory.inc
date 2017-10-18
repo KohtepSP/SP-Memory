@@ -414,7 +414,7 @@ stock Pointer FindPattern(Pointer pStart, int iSize, int[] pattern, int iPattern
  */
 stock Pointer FindPlaceForCode()
 {
-	Handle h = LoadGameConfigFile("any.tutor.memory");
+	Handle h = LoadGameConfigFile("any.koh.memory");
 	
 	if(h == null)
 	{

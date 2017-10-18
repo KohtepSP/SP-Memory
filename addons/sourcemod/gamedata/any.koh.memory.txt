@@ -1,0 +1,51 @@
+"Games"
+{
+	"#default"
+	{
+		"Addresses"
+		{
+			"Find_Server"
+			{
+				"windows"
+				{
+					"signature" "Server"
+				}	
+				
+				"linux"
+				{
+					"signature" "Server"
+				}
+			}		
+			
+			"Find_Engine"
+			{		
+				"windows"
+				{
+					"signature" "Engine"
+				}	
+
+				"linux"
+				{
+					"signature" "Engine"
+				}
+			}	
+		}
+		
+		"Signatures"
+		{
+			"Server"
+			{
+				"library"	"server"
+				"windows"	"\x4D\x5A"
+				"linux"		"\x7F\x45\x4C\x46"
+			}			
+
+			"Engine"
+			{
+				"library"	"engine"
+				"windows"	"\x4D\x5A"
+				"linux"		"\x7F\x45\x4C\x46"
+			}			
+		}
+	}
+}
