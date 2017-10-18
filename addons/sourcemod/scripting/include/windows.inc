@@ -146,7 +146,7 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 		/* */
 		
 		if(strcmp(strBuf, name, false) == 0)
-		{		
+		{
 			int iFuncNum = (Dereference(pOrdList) & 0xFFFF) * 4;
 			Pointer pFuncAddr = ptr(int(pFuncList) + iFuncNum);
 			

@@ -52,8 +52,8 @@ stock Pointer Transpose(Pointer pAddr, int iOffset)
 }
 
  /**
- *	SourcePawn doesn't support native pointer dereference, so
- *	we just need to read integer at the address instead.
+ * SourcePawn doesn't support native pointer dereference, so
+ * we just need to read integer at the address instead.
  *
  * @param pAddr	        Address that will be edited.
  * @param iOffset       Offset relatively to pAddr. If value is negative,
@@ -73,9 +73,9 @@ stock int Dereference(Pointer pAddr, int iOffset = 0)
 }
 
  /**
- *	Convert absolute address to relative. Such assembler
- *  command like "call" or "jmp" use absolute addresses,
- *  so you need to convert them with this function.
+ * Convert absolute address to relative. Such assembler
+ * command like "call" or "jmp" use absolute addresses,
+ * so you need to convert them with this function.
  *
  * @param pAddr    Pointer at relative address in memory.
  *
@@ -92,8 +92,8 @@ stock Pointer Absolute(Pointer pAddr)
 }
 
  /**
- *	Opposite of Absolute function. Use it if you want to
- *  write relative address to memory.
+ * Opposite of Absolute function. Use it if you want to
+ * write relative address to memory.
  *
  * @param pAddr Pointer at absolute address in memory.
  * @param pFunc
@@ -115,7 +115,7 @@ stock Pointer Relative(Pointer pFunc, Pointer pAddr)
 /** Read Memory **/
 
  /**
- *	Read byte from address.
+ * Read byte from address.
  *
  * @param pAddr Address where data will be readed.
  *
@@ -132,7 +132,7 @@ stock int ReadByte(Pointer pAddr)
 }
 
  /**
- *	Read word from address.
+ * Read word from address.
  *
  * @param pAddr Address where data will be readed.
  *
@@ -149,7 +149,7 @@ stock int ReadWord(Pointer pAddr)
 }
 
  /**
- *	Read integer from address.
+ * Read integer from address.
  *
  * @param pAddr Address where data will be readed.
  *
@@ -166,7 +166,7 @@ stock int ReadInt(Pointer pAddr)
 }
 
  /**
- *	Read fixed size array from address.
+ * Read fixed size array from address.
  *
  * @param pAddr  Address where data will be readed.
  * @param output Destination address, value will be stored here.
@@ -190,7 +190,7 @@ stock void ReadData(Pointer pAddr, int[] output, int iSize)
 /** Write Memory **/
 
  /**
- *	Write byte to address.
+ * Write byte to address.
  *
  * @param pAddr    Address where value will be written.
  * @param value    Data for write.
@@ -209,7 +209,7 @@ stock Pointer WriteByte(Pointer pAddr, char value)
 }
 
  /**
- *	Write word to address.
+ * Write word to address.
  *
  * @param pAddr    Address where value will be written.
  * @param value    Data for write.
@@ -228,7 +228,7 @@ stock Pointer WriteWord(Pointer pAddr, int value)
 }
 
  /**
- *	Write integer to address.
+ * Write integer to address.
  *
  * @param pAddr    Address where value will be written.
  * @param value    Data for write.
@@ -247,7 +247,7 @@ stock Pointer WriteInt(Pointer pAddr, int value)
 }
 
  /**
- *	Write fixed size array to address.
+ * Write fixed size array to address.
  *
  * @param pAddr    Address where value will be written.
  * @param data     Array of bytes for write.
@@ -275,7 +275,7 @@ stock Pointer WriteData(Pointer pAddr, int[] data, int iSize)
 /** Search Memory **/
 
  /**
- *	Returns the address of the first encountered byte.
+ * Returns the address of the first encountered byte.
  *
  * @param pStart   Starting point of search.
  * @param iValue   Searching data.
@@ -303,7 +303,7 @@ stock Pointer FindBytePtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 }
 
  /**
- *	Returns the address of the first encountered word.
+ * Returns the address of the first encountered word.
  *
  * @param pStart   Starting point of search.
  * @param iValue   Searching data.
@@ -331,7 +331,7 @@ stock Pointer FindWordPtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 }
 
  /**
- *	Returns the address of the first encountered integer.
+ * Returns the address of the first encountered integer.
  *
  * @param pStart   Starting point of search.
  * @param iValue   Searching data.
@@ -359,8 +359,8 @@ stock Pointer FindIntPtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 }
 
  /**
- *	Returns the address of the first encountered byte pattern.
- *  Use 0xFF byte value for skip this byte check.
+ * Returns the address of the first encountered byte pattern.
+ * Use 0xFF byte value for skip this byte check.
  *
  * @param pStart        Starting point of search.
  * @param iSize         Count of bytes that needs to be checked.
@@ -408,7 +408,7 @@ stock Pointer FindPattern(Pointer pStart, int iSize, int[] pattern, int iPattern
 /** Other **/
 
  /**
- *	Find static memory region for dynamic code injection.
+ * Find static memory region for dynamic code injection.
  *
  * @return    Safe place for code injection in server module.
  */
@@ -455,7 +455,7 @@ static Handle g_hAsmCall = null;
 static Pointer g_pAsmCall = nullptr;
 
  /**
- *	Execute x86 assembler code.
+ * Execute x86 assembler code.
  *
  * @param code          x86 assembler byte array.
  * @param size          Code size.
