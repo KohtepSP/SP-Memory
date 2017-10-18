@@ -16,6 +16,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
  
+#if defined _WINDOWS_INCLUDED
+	#endinput
+#else
+	#define _WINDOWS_INCLUDED
+#endif
+ 
 #include "memory.inc"
 
 #define KUSER_SHARED_DATA 0x7FFE0000
@@ -54,11 +60,12 @@ stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 
 stock Pointer GetModuleHandle(char[] name)
 {
-	if(NtCurrentPeb() == nullptr)
+	if(GetCurrentPeb() == nullptr)
 	{
 		return nullptr;
 	}
 	
+	/* If string is empty, then return EXE image base address */
 	if(name[0] == '\0')
 	{
 		return ptr(Dereference(g_pPEB, 8)); // g_pPEB->ImageBaseAddress
@@ -73,7 +80,7 @@ stock Pointer GetModuleHandle(char[] name)
 	{
 		char str[260];
 		
-		/* Get pointer at unicode buffer which is module name */
+		/* Get pointer at unicode buffer that is module name */
 		Pointer pDllName = ptr(Dereference(pLdrModule, 48)); // pLdrModule->BaseDllName.Buffer
 		
 		int i = 0;
@@ -107,20 +114,20 @@ stock Pointer GetModuleHandle(char[] name)
 
 stock Pointer GetProcAddress(Pointer pModule, char[] name)
 {
-	Pointer pDOSHeader = pModule;
-	Pointer pPEHeader = Transpose(pDOSHeader, Dereference(pDOSHeader, 60));
+	Pointer pDOSHeader  = pModule;
+	Pointer pPEHeader   = Transpose(pDOSHeader, Dereference(pDOSHeader, 60));
 	Pointer pImportDesc = Transpose(pModule,  Dereference(pPEHeader, 120));
 		
-	Pointer pNameList = Transpose(pModule, Dereference(pImportDesc, 32));
+	int iFuncCount    = Dereference(pImportDesc, 20);
 	Pointer pFuncList = Transpose(pModule, Dereference(pImportDesc, 28));
-	int iFuncCount = Dereference(pImportDesc, 20);
+	Pointer pNameList = Transpose(pModule, Dereference(pImportDesc, 32));
+	Pointer pOrdList  = Transpose(pModule, Dereference(pImportDesc, 36));
 	
 	for(int i = 0; i < iFuncCount; i++)
 	{
 		char strBuf[1024];
 		
-		Pointer pStrName = Transpose(pModule, Dereference(pNameList));
-		Pointer pFuncAddr = Transpose(pModule, Dereference(pFuncList));
+		Pointer pStrName  = Transpose(pModule, Dereference(pNameList));
 		
 		/*  PCHAR to char[] */
 		int j = 0;
@@ -140,17 +147,20 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 		
 		if(strcmp(strBuf, name, false) == 0)
 		{
-			return pFuncAddr;
+			int iFuncNum = Dereference(pOrdList) * 4;
+			Pointer pFuncAddr = ptr(int(pFuncList) + iFuncNum);
+			
+			return Transpose(pModule, Dereference(pFuncAddr));
 		}
 		
 		pNameList = Transpose(pNameList, 4);
-		pFuncList = Transpose(pFuncList, 4);
+		pOrdList  = Transpose(pOrdList, 4);
 	}
 	
 	return nullptr;
 }
 
-stock Pointer NtCurrentPeb()
+stock Pointer GetCurrentPeb()
 {
 	static int g_GetPEBCode[] = 
 	{
