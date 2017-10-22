@@ -118,12 +118,12 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 	Pointer pPEHeader   = Transpose(pDOSHeader, Dereference(pDOSHeader, 60));
 	Pointer pImportDesc = Transpose(pModule,  Dereference(pPEHeader, 120));
 		
-	int iFuncCount    = Dereference(pImportDesc, 20);
+	int iNamesCount    = Dereference(pImportDesc, 24);
 	Pointer pFuncList = Transpose(pModule, Dereference(pImportDesc, 28));
 	Pointer pNameList = Transpose(pModule, Dereference(pImportDesc, 32));
 	Pointer pOrdList  = Transpose(pModule, Dereference(pImportDesc, 36));
 	
-	for(int i = 0; i < iFuncCount; i++)
+	for(int i = 0; i < iNamesCount; i++)
 	{
 		char strBuf[1024];
 		
@@ -133,6 +133,11 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 		int j = 0;
 		while(pModule)
 		{
+			if(j >= 1024)
+			{
+				break;
+			}
+			
 			strBuf[j] = ReadByte(pStrName);
 			
 			if(strBuf[j] == '\0')
@@ -143,6 +148,7 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 			j++;
 			pStrName = Transpose(pStrName, 1);
 		}
+		strBuf[1023] = '\0';
 		/* */
 		
 		if(strcmp(strBuf, name, false) == 0)

@@ -35,8 +35,6 @@ static Pointer g_pStdCall = nullptr;
 
 int g_StdCall[] = 
 {
-	0xCC,				// int3 (for debugging purposes)
-	
 	0x58,				// pop eax (save return address)
 	0x8B, 0x0C, 0x24,	// mov ecx, dword ptr [esp] (restore pFunc argument)
 	0x89, 0x04, 0x24,	// mov dword ptr [esp], eax
