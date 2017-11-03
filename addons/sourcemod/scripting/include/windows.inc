@@ -28,7 +28,13 @@
 
 static Pointer g_pPEB;
 
-/* A little more user-friendly analog of GetVersion() */
+/**
+ * Returns Microsoft Windows major and minor version numbers.
+ *
+ * @param iMajorVer     Output value for major version.
+ * @param iMinorVer     Output value for major version
+ *
+ */
 stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 {
 	Pointer pUserSharedData = ptr(KUSER_SHARED_DATA);
@@ -37,8 +43,14 @@ stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 	iMinorVer = Dereference(pUserSharedData, 0x270);
 }
 
-/* Calculate virtual size of module, loaded in memory.     
-   Returns -1 if calculation failed */
+/** 
+ * Calculate virtual size of module, loaded in memory.
+ * 
+ * @param pAddr    Module image base.
+ *
+ * @return         Module size. 0 if argument is null, -1 if
+ *                 address doesn't have a valid PE image signature.
+ */
 stock int GetModuleSize(Pointer pAddr)
 {
 	if(pAddr == nullptr)
@@ -58,6 +70,13 @@ stock int GetModuleSize(Pointer pAddr)
 	}
 }
 
+/** 
+ * Retrieves a module handle for the specified module.
+ *
+ * @param name     The name of the loaded module.
+ *
+ * @return         Image base of the specified module name.
+ */
 stock Pointer GetModuleHandle(char[] name)
 {
 	if(GetCurrentPeb() == nullptr)
@@ -112,6 +131,15 @@ stock Pointer GetModuleHandle(char[] name)
 	return nullptr;
 }
 
+/** 
+ * Retrieves the address of an exported function or 
+ * variable from the specified dynamic-link library (DLL).
+ *
+ * @param pModule    A pointer to the DLL module that contains the function or variable.
+ * @param name       The function or variable name.
+ *
+ * @return           Address of the exported function or variable.
+ */
 stock Pointer GetProcAddress(Pointer pModule, char[] name)
 {
 	Pointer pDOSHeader  = pModule;
@@ -166,6 +194,11 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 	return nullptr;
 }
 
+/** 
+ * Returns a pointer to the Thread Environment Block (TEB) of the current thread.
+ *
+ * @return    A pointer to the thread environment block of the current thread.
+ */
 stock Pointer GetCurrentPeb()
 {
 	static int g_GetPEBCode[] = 

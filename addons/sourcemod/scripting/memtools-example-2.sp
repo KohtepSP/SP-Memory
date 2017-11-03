@@ -17,7 +17,7 @@ public void OnPluginStart()
 {	
 	/* Get image base of kernel32. */
 	Pointer pKernel32 = GetModuleHandle("kernel32.dll");
-	/* Get user32.Sleep function pointer. */
+	/* Get kernel32.Sleep function pointer. */
 	Pointer pSleep = GetProcAddress(pKernel32, "Sleep");
 	
 	PrintToServer("----------------------------------------");
