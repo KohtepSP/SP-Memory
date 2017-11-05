@@ -83,21 +83,21 @@ stock int Dereference(Pointer pAddr, int iOffset = 0)
  */
 stock Pointer Absolute(Pointer pAddr)
 {
-	return ptr(int(pAddr) + Dereference(pAddr) + sizeof(pAddr));
+	return ptr(int(pAddr) + Dereference(pAddr) + 5);
 }
 
  /**
  * Opposite of Absolute function. Use it if you want to
  * write relative address to memory.
  *
- * @param pAddr     Pointer at absolute address in memory.
- * @param pFunc     Pointer at function.
+ * @param pMemAddr    Pointer at place in memory where function will be inserted.
+ * @param pAddr       Pointer at function in memory.
  *
- * @return          Address to pAddr relatively to pFunc.
+ * @return            Address to pAddr relatively to pFunc.
  */
-stock Pointer Relative(Pointer pFunc, Pointer pAddr)
+stock Pointer Relative(Pointer pMemAddr, Pointer pFunc)
 {
-	return ptr(int(pAddr) - int(pFunc) - 5);
+	return ptr(int(pMemAddr) - int(pFunc) - 5);
 }
 
 /** Read Memory **/

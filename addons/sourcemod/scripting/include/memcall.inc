@@ -17,8 +17,9 @@
  */
  
 /* 
-*   ATTENTION: All functional below is not tested yet, it probably doesn't even work! 
-*/
+ * TODO: Fix awful crutches like "sub ebp, 8" (but later);
+ * TODO: Documentation and cleaning up unnecessary code comments.
+ */
  
 #if defined _MEMCALL_INCLUDED
 	#endinput
@@ -108,25 +109,7 @@ stock int StdCall(Pointer pFunc, int iArg)
 	return SDKCall(g_hStdCall, pFunc, iArg);	
 }
 
-/*
-	StartPrepSDKCall(SDKCall_Static);
-	PrepSDKCall_SetSignature(SDKLibrary_Server, "\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE", 16);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hStdCall = EndPrepSDKCall();
-	SDKCall(g_hStdCall, pFunc, iArg);
-
-*/
-
 #define FUNCCALL_MAX_ARGS 32
-
-struct TFuncInfo
-{
-	public int iArgCount;
-	public int iArgList[FUNCCALL_MAX_ARGS];
-	public Pointer pFuncAdd;
-};
 
 /* TODO: __pascal, __register, __vectorcall */
 enum EFuncCallType
@@ -155,12 +138,16 @@ static Pointer g_FuncCallAddr = nullptr;
 /* Current code writing position */
 static Pointer g_FuncCallOffsettedAddr = nullptr;
 
+/** Function configuration **/
+/* Calling convention */
 static EFuncCallType g_FuncCallType = FuncCall_NoArgs;
-static bool g_bIsWritingFunc = false;
-static EFuncParamType g_FuncCallParams[FUNCCALL_MAX_ARGS];
-static int g_FuncCallParamCount = 0;
 
-static TFuncInfo g_FuncInfo;
+static bool g_bIsWritingFunc = false;
+
+static EFuncParamType g_FuncCallParams[FUNCCALL_MAX_ARGS];
+
+static int g_FuncCallParamCount = 0;
+/** **/
 
 stock void PrepFunc_WriteCode(int[] code, int size)
 {
@@ -172,9 +159,19 @@ stock void PrepFunc_WriteByte(int value)
 	g_FuncCallOffsettedAddr = WriteByte(g_FuncCallOffsettedAddr, value);
 }
 
-stock void StartPrepFuncCall(EFuncCallType value, Pointer pFuncAddr)
+stock void PrepFunc_WriteWord(int value)
 {
-	if(g_bIsWritingFunc != false)
+	g_FuncCallOffsettedAddr = WriteWord(g_FuncCallOffsettedAddr, value);
+}
+
+stock void PrepFunc_WriteInt(int value)
+{
+	g_FuncCallOffsettedAddr = WriteInt(g_FuncCallOffsettedAddr, value);
+}
+
+stock void StartPrepFuncCall(EFuncCallType callType, Pointer pFuncAddr)
+{
+	if(g_bIsWritingFunc)
 	{
 		return;
 	}
@@ -182,13 +179,19 @@ stock void StartPrepFuncCall(EFuncCallType value, Pointer pFuncAddr)
 	g_FuncOrigAddr = pFuncAddr;
 	g_FuncCallAddr = FindPlaceForCode();
 	g_FuncCallOffsettedAddr = g_FuncCallAddr;
-	g_FuncCallType = value;
+	g_FuncCallType = callType;
+
+	PrepFunc_WriteByte(0xCC);
 	
-	/*
-		push ebp;
-		mov ebp, esp;
-	*/
-	PrepFunc_WriteCode({ 0x55, 0x8B, 0xEC }, 3);
+	if (g_FuncCallType != FuncCall_NoArgs)
+	{
+		/*
+			push ebp;
+			mov ebp, dword ptr [esp + 16];
+			sub ebp, 8; // temporaly, don't worry!
+		*/
+		PrepFunc_WriteCode({ 0x55, 0x8B, 0x6C, 0xE4, 0x10, 0x83, 0xED, 0x08 }, 8);
+	}
 	
 	g_bIsWritingFunc = true;
 }
@@ -205,14 +208,12 @@ stock void PrepFuncCall_AddParameter(EFuncParamType value)
 }
 
 /*
-
 ebp+20 = ...
 ebp+16 = arg3
 ebp+12 = arg2
 ebp+8  = arg1
 ebp+4  = ret addr
 ebp+0  = esp value
-
 */
 stock Pointer EndPrepFuncCall()
 {
@@ -257,37 +258,70 @@ stock Pointer EndPrepFuncCall()
 			PrepFunc_WriteByte(0x08 + i * 4);
 		}
 	}
+
+	int i = int(Relative(g_FuncOrigAddr, g_FuncCallOffsettedAddr));
 	
 	PrepFunc_WriteByte(0xE8);
-	WriteInt(g_FuncCallOffsettedAddr, int(Relative(g_FuncCallOffsettedAddr, g_FuncOrigAddr)));
+	PrepFunc_WriteInt(i);
 	
-	if(g_FuncCallType == FuncCall_CDecl && g_FuncCallParamCount > 0)
+	if(g_FuncCallParamCount > 0)
 	{
-		/* add esp, g_FuncCallParamCount * 4; */
-		PrepFunc_WriteCode({ 0x83, 0xC4 }, 2);
-		PrepFunc_WriteByte(g_FuncCallParamCount * 4);
+		if(g_FuncCallType == FuncCall_CDecl)
+		{
+			/* add esp, g_FuncCallParamCount * 4; */
+			PrepFunc_WriteCode({ 0x83, 0xC4 }, 2);
+			PrepFunc_WriteByte(g_FuncCallParamCount * 4);
+		}
+	}
+
+	if (g_FuncCallType != FuncCall_NoArgs)
+	{
+		/* pop ebp; */
+		PrepFunc_WriteCode({ 0x5D }, 1);
 	}
 	
 	/* ret; */
-	PrepFunc_WriteCode({ 0xC3 }, 1);		
+	PrepFunc_WriteCode({ 0xC3 }, 1);
 	
-	Pointer pRes = g_FuncCallAddr;
+	/* 
+	    "funcInfo" is actually a struct, allocated in native memory.
+
+		-8: Argument count; (thx sp for inability to use sizeof for indeterminate array size)
+	    -4: Size of constructed function;
+	    +0: Code itself.
+	*/
 	
+	Pointer funcInfo;
+	
+	funcInfo = g_FuncCallAddr;
+	WriteInt(Transpose(funcInfo, -4), int(g_FuncCallOffsettedAddr) - int(g_FuncCallAddr));
+	WriteInt(Transpose(funcInfo, -8), g_FuncCallParamCount);
+
+	/* Flush constructed function information. */
 	g_FuncCallAddr = nullptr;
 	g_FuncOrigAddr = nullptr;
 	g_FuncCallParamCount = 0;
 	g_bIsWritingFunc = false;
 	g_FuncCallType = FuncCall_NoArgs;
 	
-	
-	return pRes;
+	return funcInfo;
 }
 
 static Handle g_hFuncCall = null;
 static Pointer g_pFuncCall = nullptr;
 
-stock int FuncCall(Pointer pFuncAddr)
+stock int FuncCall(Pointer pFuncInfo, int[] args)
 {
+	if (pFuncInfo == nullptr)	
+	{
+		return -1;
+	}
+	
+	int nArgCount = ReadInt(Transpose(pFuncInfo, -8));
+	int nFuncSize = ReadInt(Transpose(pFuncInfo, -4));
+	Pointer pArgStruct = nullptr;
+	Pointer pArgStructAddr = nullptr;
+
 	if(g_hFuncCall == null)
 	{
 		/* Get free space for our code */
@@ -306,24 +340,87 @@ stock int FuncCall(Pointer pFuncAddr)
 		/* Create SDK call with our asm memory pointer */
 		PrepSDKCall_SetSignature(SDKLibrary_Server, "\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE\xEF\xBE\xAD\xDE", 16);
 		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		
+		/* Pointer to arguments structure. */
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		
 		g_hFuncCall = EndPrepSDKCall();
 
 		if(g_hFuncCall == null)
 		{
 			return -1;
 		}
+
+		pArgStruct = FindPlaceForCode();
+		
+		for (int j = 0; j <= nArgCount; j++)
+		{
+			PrintToServer("==== ---- %d", args[j]);
+			pArgStruct = WriteInt(pArgStruct, args[j]);
+		}
+		
+		pArgStruct = ptr(int(pArgStruct) - (nArgCount * 4));
+		
+		pArgStructAddr = FindPlaceForCode();
+		WriteInt(pArgStructAddr, int(pArgStruct));
 		
 		/* Flush all "deadbeef" codes */		
-		pAddr = g_pAsmCall;
+		pAddr = g_pFuncCall;
 		for(int i = 0; i < 4; i++)
 		{
 			pAddr = WriteInt(pAddr, 0x00000000);
 		}
 	}
-	
-	/* Write x86 assembler code */
-	WriteData(g_pAsmCall, code, size);
+		
+	Pointer pAddr = g_pFuncCall;
+	pAddr = WriteByte(pAddr, 0xCC);
+	pAddr = WriteByte(pAddr, 0xE8);
+	pAddr = WriteInt(pAddr, Relative(pFuncInfo, g_pFuncCall));
+	WriteByte(pAddr, 0xC3);
 	
 	/* Call code at g_pFuncCall address */
-	return SDKCall(g_hFuncCall);	
+	return SDKCall(g_hFuncCall, pArgStruct);
+}
+
+stock int FuncCall0(Pointer pFuncInfo)
+{
+	return FuncCall(pFuncInfo, { 0 });
+}
+
+stock int FuncCall1(Pointer pFuncInfo, int arg1)
+{
+	int args[1];
+	args[0] = arg1;
+	
+	return FuncCall(pFuncInfo, args);
+}
+
+stock int FuncCall2(Pointer pFuncInfo, int arg1, int arg2)
+{
+	int args[2];
+	args[0] = arg1;
+	args[1] = arg2;
+	
+	return FuncCall(pFuncInfo, args);
+}
+
+stock int FuncCall3(Pointer pFuncInfo, int arg1, int arg2, int arg3)
+{
+	int args[3];
+	args[0] = arg1;
+	args[1] = arg2;
+	args[2] = arg3;
+	
+	return FuncCall(pFuncInfo, args);
+}
+
+stock int FuncCall4(Pointer pFuncInfo, int arg1, int arg2, int arg3, int arg4)
+{
+	int args[4];
+	args[0] = arg1;
+	args[1] = arg2;
+	args[2] = arg3;
+	args[3] = arg4;
+	
+	return FuncCall(pFuncInfo, args);
 }

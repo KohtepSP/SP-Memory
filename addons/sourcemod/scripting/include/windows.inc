@@ -146,7 +146,7 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 	Pointer pPEHeader   = Transpose(pDOSHeader, Dereference(pDOSHeader, 60));
 	Pointer pImportDesc = Transpose(pModule,  Dereference(pPEHeader, 120));
 		
-	int iNamesCount    = Dereference(pImportDesc, 24);
+	int iNamesCount   = Dereference(pImportDesc, 24);
 	Pointer pFuncList = Transpose(pModule, Dereference(pImportDesc, 28));
 	Pointer pNameList = Transpose(pModule, Dereference(pImportDesc, 32));
 	Pointer pOrdList  = Transpose(pModule, Dereference(pImportDesc, 36));
@@ -155,7 +155,7 @@ stock Pointer GetProcAddress(Pointer pModule, char[] name)
 	{
 		char strBuf[1024];
 		
-		Pointer pStrName  = Transpose(pModule, Dereference(pNameList));
+		Pointer pStrName = Transpose(pModule, Dereference(pNameList));
 		
 		/*  PCHAR to char[] */
 		int j = 0;
