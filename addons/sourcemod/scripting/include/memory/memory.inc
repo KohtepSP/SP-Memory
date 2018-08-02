@@ -280,7 +280,7 @@ stock Pointer WriteMemory(Pointer pAddr, Pointer pMemory, int iSize)
  * @param iOffset    Count of bytes that will be added to result.
  * @param bBack      Search direction.
  *
- * @return            Address to first detected byte.
+ * @return           Address to first detected byte.
  */
 stock Pointer FindBytePtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 {
@@ -296,7 +296,10 @@ stock Pointer FindBytePtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 			return ptr(int(pStart) + iOffset);
 		}
 		
-		pStart = Pointer(int(pStart) + 1);
+		if (bBack)
+			pStart = Transpose(pStart, -1);
+		else
+			pStart = Transpose(pStart, 1);
 	}
 }
 
@@ -324,7 +327,10 @@ stock Pointer FindWordPtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 			return ptr(int(pStart) + iOffset);
 		}
 		
-		pStart = Pointer(int(pStart) + 2);
+		if (bBack)
+			pStart = Transpose(pStart, -1);
+		else
+			pStart = Transpose(pStart, 1);
 	}
 }
 
@@ -352,7 +358,10 @@ stock Pointer FindIntPtr(Pointer pStart, int iValue, int iOffset, bool bBack)
 			return ptr(int(pStart) + iOffset);
 		}
 		
-		pStart = Pointer(int(pStart) + 4);
+		if (bBack)
+			pStart = Transpose(pStart, -1);
+		else
+			pStart = Transpose(pStart, 1);
 	}
 }
 
